@@ -287,19 +287,23 @@ class _MapScreenState extends State<MapScreen> {
       if ((p.x - c.x).abs() < 14 && (p.y - c.y).abs() < 14) return _setFocus(i, 'parking', keepOn: true);
     }
     for (final s in _secs) {
-      if (_inside(p, s.poly)) {
-        Parish? who;
-        for (final x in parishes) {
-          if (x.section == s.n) {
-            who = x;
-            break;
-          }
-        }
-        setState(() => _detail = '${i.t('sectionN', {'n': s.n})} — ${who != null ? who.label : i.t('sectionOpen')}');
-        return;
-      }
+      if (_inside(p, s.poly)) return _showSection(i, s.n);
     }
   }
+
+  Parish? _parishIn(String section) {
+    for (final x in parishes) {
+      if (x.section == section) return x;
+    }
+    return null;
+  }
+
+  String _secLabel(I18n i, String n, bool mine) {
+    final who = _parishIn(n);
+    return '${i.t('sectionN', {'n': n})} — ${who != null ? who.label : i.t('sectionOpen')}${mine ? ' (${i.s('your section', 'tu sección')})' : ''}';
+  }
+
+  void _showSection(I18n i, String n) => setState(() => _detail = _secLabel(i, n, false));
 
   @override
   Widget build(BuildContext context) {
@@ -323,13 +327,37 @@ class _MapScreenState extends State<MapScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             AspectRatio(
               aspectRatio: _vbW / _vbH,
-              child: LayoutBuilder(
-                builder: (context, box) => GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapUp: (d) => _tapMap(i, d.localPosition, box.biggest),
-                  child: SvgPicture.string(svg, fit: BoxFit.fill),
-                ),
-              ),
+              child: LayoutBuilder(builder: (context, box) {
+                final sx = box.maxWidth / _vbW, sy = box.maxHeight / _vbH;
+                Offset at(_Pt p) => Offset((p.x - _vbX) * sx, (p.y - _vbY) * sy);
+                // Invisible, screen-reader-only buttons on top of the drawing, so VoiceOver /
+                // TalkBack users can reach every section and the parking (the web app's SVG
+                // sections were buttons too). They don't catch normal taps.
+                Widget a11y(_Pt c, double w, double h, String label, VoidCallback onTap) {
+                  final o = at(c);
+                  return Positioned(
+                    left: o.dx - w / 2,
+                    top: o.dy - h / 2,
+                    width: w,
+                    height: h,
+                    child: Semantics(button: true, label: label, onTap: onTap, child: const SizedBox.expand()),
+                  );
+                }
+
+                return Stack(children: [
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: (d) => _tapMap(i, d.localPosition, box.biggest),
+                      child: ExcludeSemantics(child: SvgPicture.string(svg, fit: BoxFit.fill)),
+                    ),
+                  ),
+                  for (final sec in _secs)
+                    a11y(sec.center, 22, 16, _secLabel(i, sec.n, sec.n == (parish?.section ?? '')), () => _showSection(i, sec.n)),
+                  for (final c in const [_Pt(52, 378), _Pt(348, 378)])
+                    a11y(c, 24, 24, '${i.t('legendParking')}. ${i.t('mapDirections')}', () => _setFocus(i, 'parking', keepOn: true)),
+                ]);
+              }),
             ),
             const SizedBox(height: 6),
             Text(i.t('notToScale'), textAlign: TextAlign.center, style: T.body(12, color: C.muted)),

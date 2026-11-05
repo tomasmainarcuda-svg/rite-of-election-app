@@ -88,19 +88,24 @@ class _HomeScreenState extends State<HomeScreen> {
         [s % 60, 'cdSec'],
       ];
       body = Column(children: [
-        Text(label, textAlign: TextAlign.center, style: T.serif(16, color: C.gold2, italic: true)),
+        Text(label, textAlign: TextAlign.center, style: T.body(14, color: C.white)),
         const SizedBox(height: 10),
         Row(
           children: [
             for (final u in units)
               Expanded(
+                // Like the web app: gold numbers, UPPERCASE units, thin gold border.
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(color: const Color(0x1FFFFFFF), borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1AFFFFFF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0x66E2BE7C)),
+                  ),
                   child: Column(children: [
-                    Text('${u[0]}', style: T.head(28, color: C.white)),
-                    Text(i.t(u[1] as String), style: T.body(12, color: C.gold2)),
+                    Text('${u[0]}', style: T.head(30, color: C.gold2).copyWith(height: 1.05)),
+                    Text(i.t(u[1] as String).toUpperCase(), style: T.body(12, color: C.white).copyWith(letterSpacing: 0.7)),
                   ]),
                 ),
               ),
@@ -188,13 +193,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ['commit', 'navCommit'],
       ['info', 'navInfo'],
     ];
-    return GridView.count(
-      crossAxisCount: 3,
+    return GridView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 1.05,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        mainAxisExtent: 84, // compact tiles like the web app
+      ),
       children: [
         for (final q in quick)
           Material(
@@ -204,9 +211,9 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(14),
               onTap: () => widget.onGo(q[0]),
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(routeIcon(q[0]), size: 28, color: C.green),
+                Icon(routeIcon(q[0]), size: 26, color: C.green),
                 const SizedBox(height: 6),
-                Text(i.t(q[1]), textAlign: TextAlign.center, style: T.body(13, weight: FontWeight.w600)),
+                Text(i.t(q[1]).toUpperCase(), textAlign: TextAlign.center, style: T.head(13, color: C.green, weight: FontWeight.w700, spacing: 0.4)),
               ]),
             ),
           ),
@@ -241,6 +248,9 @@ class _AgendaCard extends StatelessWidget {
         _ => C.green,
       };
 
+  /// Same look as the web app's agenda cards: cream card, colored bar on the left, big time,
+  /// bold title, serif italic line in the accent color, place, and an arrow top-right.
+  /// Past → faded "ENDED"; now → white with a border in the accent color and "NOW".
   @override
   Widget build(BuildContext context) {
     final i = AppScope.of(context).i;
@@ -250,65 +260,65 @@ class _AgendaCard extends StatelessWidget {
     final past = !now.isBefore(end);
     final live = !past && !now.isBefore(start);
     final t = formatTime(item.time).split(' ');
+    final faded = const Color(0xFF9A9284);
+    final em = item.accent == 'gold' ? C.goldDark : _accent;
 
-    return Opacity(
-      opacity: past ? 0.55 : 1,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: C.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: live ? C.gold : C.cardBorder, width: live ? 2 : 1),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => onGo(item.link),
-          child: IntrinsicHeight(
-            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Container(width: 6, color: _accent),
-              SizedBox(
-                width: 76,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text.rich(TextSpan(children: [
-                      TextSpan(text: t[0], style: T.head(20, color: C.green)),
-                      TextSpan(text: ' ${t[1]}', style: T.head(11, color: C.muted)),
-                    ])),
-                    if (item.end.isNotEmpty) Text(formatTime(item.end), style: T.body(11.5, color: C.muted)),
-                  ]),
-                ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: live ? C.white : (past ? const Color(0xFFF7F2E8) : C.cardSoft),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: live ? _accent : C.cardBorder, width: live ? 2 : 1),
+        boxShadow: live ? const [BoxShadow(color: Color(0x241F4A3B), blurRadius: 22, offset: Offset(0, 8))] : null,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => onGo(item.link),
+        child: IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Container(width: 6, color: past ? _accent.withValues(alpha: 0.45) : _accent),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
+              child: SizedBox(
+                width: 72,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text.rich(TextSpan(children: [
+                    TextSpan(text: t[0], style: T.head(26, color: past ? faded : C.ink).copyWith(height: 1)),
+                    TextSpan(text: ' ${t[1]}', style: T.head(12, color: C.muted, weight: FontWeight.w700)),
+                  ])),
+                  if (item.end.isNotEmpty)
+                    Padding(padding: const EdgeInsets.only(top: 6), child: Text(formatTime(item.end), style: T.body(13, color: C.muted))),
+                ]),
               ),
-              Expanded(
+            ),
+            Expanded(
+              child: Opacity(
+                opacity: past ? 0.75 : 1,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text(i.pick(item.title), style: T.body(16, weight: FontWeight.w700)),
-                    Text(i.pick(item.desc), style: T.serif(14, color: C.muted, italic: true)),
-                    const SizedBox(height: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(i.pick(item.title), style: T.head(19, color: past ? faded : C.ink)),
+                    Padding(padding: const EdgeInsets.only(top: 3), child: Text(i.pick(item.desc), style: T.serif(15, color: em, italic: true))),
+                    const SizedBox(height: 8),
                     Row(children: [
-                      const Icon(Icons.place_outlined, size: 14, color: C.goldDark),
-                      const SizedBox(width: 3),
-                      Flexible(child: Text(i.pick(item.place), style: T.body(12.5, color: C.goldDark))),
+                      const Icon(Icons.place_outlined, size: 15, color: C.muted),
+                      const SizedBox(width: 5),
+                      Flexible(child: Text(i.pick(item.place), style: T.body(13.5, color: C.muted))),
                     ]),
                   ]),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  if (past || live)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: live ? C.gold : C.paper, borderRadius: BorderRadius.circular(999)),
-                      child: Text(i.t(live ? 'agNow' : 'agEnded'), style: T.head(11, color: live ? C.white : C.muted, weight: FontWeight.w700)),
-                    ),
-                  const Icon(Icons.chevron_right, color: C.muted),
-                ]),
-              ),
-            ]),
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 12, 12, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Icon(Icons.arrow_forward, size: 18, color: live ? _accent : const Color(0xFFC9BFAE)),
+                if (past || live)
+                  Text(i.t(live ? 'agNow' : 'agEnded').toUpperCase(),
+                      style: T.head(11, color: live ? _accent : C.muted, weight: FontWeight.w800, spacing: 1.1)),
+              ]),
+            ),
+          ]),
         ),
       ),
     );

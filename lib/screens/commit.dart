@@ -34,6 +34,9 @@ class _CommitScreenState extends State<CommitScreen> {
   final Set<String> _responses = {};
   Map<String, String?> _err = {};
   bool _sending = false;
+  // To bring the first field with an error into view (the web app focused it).
+  final _keys = {'name': GlobalKey(), 'parish': GlobalKey(), 'contact': GlobalKey(), 'resp': GlobalKey()};
+  final _nameFocus = FocusNode(), _contactFocus = FocusNode();
   String? _done; // 'remote' | 'local' → thank-you view
 
   @override
@@ -41,6 +44,8 @@ class _CommitScreenState extends State<CommitScreen> {
     _name.dispose();
     _contact.dispose();
     _note.dispose();
+    _nameFocus.dispose();
+    _contactFocus.dispose();
     super.dispose();
   }
 
@@ -82,7 +87,16 @@ class _CommitScreenState extends State<CommitScreen> {
         'resp': _responses.isEmpty ? i.t('errResponse') : null,
       };
     });
-    if (_err.values.any((e) => e != null)) return;
+    if (_err.values.any((e) => e != null)) {
+      final first = ['name', 'parish', 'contact', 'resp'].firstWhere((k) => _err[k] != null);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _keys[first]?.currentContext;
+        if (ctx != null) Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 350), alignment: 0.15);
+        if (first == 'name') _nameFocus.requestFocus();
+        if (first == 'contact') _contactFocus.requestFocus();
+      });
+      return;
+    }
 
     setState(() => _sending = true);
     final p = parish == _other ? null : parishById(parish!);
@@ -161,10 +175,10 @@ class _CommitScreenState extends State<CommitScreen> {
         AppCard(
           title: i.t('commitFormTitle'),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            _label(i.t('fName')),
-            TextField(controller: _name, textCapitalization: TextCapitalization.words, autofillHints: const [AutofillHints.name]),
+            KeyedSubtree(key: _keys['name'], child: _label(i.t('fName'))),
+            TextField(controller: _name, focusNode: _nameFocus, textCapitalization: TextCapitalization.words, autofillHints: const [AutofillHints.name]),
             _error('name'),
-            _label(i.t('yourParish')),
+            KeyedSubtree(key: _keys['parish'], child: _label(i.t('yourParish'))),
             ParishPicker(selectedId: parishValue == _other ? '' : parishValue, onPick: (id) => setState(() => _parish = id)),
             CheckboxListTile(
               dense: true,
@@ -175,14 +189,14 @@ class _CommitScreenState extends State<CommitScreen> {
               onChanged: (v) => setState(() => _parish = v == true ? _other : null),
             ),
             _error('parish'),
-            _label(i.t('fContact')),
-            TextField(controller: _contact, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.email]),
+            KeyedSubtree(key: _keys['contact'], child: _label(i.t('fContact'))),
+            TextField(controller: _contact, focusNode: _contactFocus, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.email]),
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(i.t('fContactHint'), style: T.body(12.5, color: C.muted)),
             ),
             _error('contact'),
-            _label(i.t('fResponse')),
+            KeyedSubtree(key: _keys['resp'], child: _label(i.t('fResponse'))),
             for (final o in _options)
               CheckboxListTile(
                 dense: true,

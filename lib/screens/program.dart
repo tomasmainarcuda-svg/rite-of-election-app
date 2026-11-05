@@ -128,15 +128,24 @@ class _ProgramScreenState extends State<ProgramScreen> {
             child: SingleChildScrollView(
               controller: _scroll,
               physics: _pointers.length >= 2 ? const NeverScrollableScrollPhysics() : null,
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 90),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                _cover(i),
-                for (final p in libretoParts) ...[
-                  _partTitle(i, p),
-                  for (final b in p.intro) _block(i, b, null, const {}),
-                  for (final s in p.sections) _section(i, s, content[s.id], s.id == nowId),
-                ],
-              ]),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+              // The booklet "page": like the printed worship aid (web app's .libreto).
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+                decoration: BoxDecoration(
+                  color: _paper,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFECE4D3)),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  _cover(i),
+                  for (final p in libretoParts) ...[
+                    _partTitle(i, p),
+                    for (final b in p.intro) _block(i, b, null, const {}),
+                    for (final s in p.sections) _section(i, s, content[s.id], s.id == nowId),
+                  ],
+                ]),
+              ),
             ),
           ),
         ),
@@ -147,7 +156,7 @@ class _ProgramScreenState extends State<ProgramScreen> {
             bottom: 14,
             child: Center(
               child: Material(
-                color: C.red,
+                color: C.green,
                 shape: const StadiumBorder(),
                 elevation: 4,
                 child: InkWell(
@@ -156,7 +165,7 @@ class _ProgramScreenState extends State<ProgramScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.circle, size: 10, color: C.white),
+                      const Icon(Icons.circle, size: 10, color: Color(0xFFFF6B6B)),
                       const SizedBox(width: 8),
                       Text('${i.t('nowShort')}: ${i.pick(nowSec.title)}', style: T.head(15, color: C.white, weight: FontWeight.w700)),
                     ]),
@@ -170,39 +179,62 @@ class _ProgramScreenState extends State<ProgramScreen> {
   }
 
   /* --------------------------------------------------------------- cover */
-  Widget _cover(I18n i) => Container(
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-        decoration: BoxDecoration(color: C.green, borderRadius: BorderRadius.circular(18)),
+  Widget _cover(I18n i) => Padding(
+        padding: const EdgeInsets.only(top: 6, bottom: 10),
         child: Column(children: [
-          // Diocese logo with its lettering when available; otherwise the crest.
-          Image.asset(
-            'assets/images/dpc-logo.png',
-            height: 56,
-            errorBuilder: (_, __, ___) => const AssetLogo('diocese-logo.png', height: 56),
-          ),
+          // Diocese logo with its lettering (official branding), like the web app.
+          Image.asset('assets/images/dpc-logo.png', width: 210, errorBuilder: (_, __, ___) => const AssetLogo('diocese-logo.png', height: 70)),
           const SizedBox(height: 14),
-          Text(i.pick(LibretoCover.title).toUpperCase(), textAlign: TextAlign.center, style: T.head(28, color: C.white)),
-          Text(i.pick(LibretoCover.title2), textAlign: TextAlign.center, style: T.serif(18, color: C.gold2, italic: true)),
-          const SizedBox(height: 12),
-          Text(formatEventDate(i.lang), textAlign: TextAlign.center, style: T.body(14, color: C.white, weight: FontWeight.w600)),
-          Text('Chase Field', style: T.head(18, color: C.gold2)),
-          Text(LibretoCover.address, textAlign: TextAlign.center, style: T.body(12, color: C.white)),
-          Container(height: 1, width: 80, color: C.gold, margin: const EdgeInsets.symmetric(vertical: 14)),
-          Text(i.pick(LibretoCover.presides), style: T.serif(13, color: C.gold2, italic: true)),
-          Text(i.pick(LibretoCover.bishop), style: T.head(17, color: C.white)),
-          Text(i.pick(LibretoCover.bishopRole), style: T.serif(13, color: C.white, italic: true)),
-          const SizedBox(height: 14),
-          Text(i.pick(LibretoCover.foot), style: T.body(11.5, color: C.gold2)),
+          Text('${i.pick(LibretoCover.title)}\n${i.pick(LibretoCover.title2)}',
+              textAlign: TextAlign.center, style: T.serif(28, color: C.green, weight: FontWeight.w700).copyWith(height: 1.15)),
+          const SizedBox(height: 16),
+          Text(formatEventDate(i.lang).toUpperCase(), textAlign: TextAlign.center, style: T.head(14, weight: FontWeight.w700, spacing: 0.6)),
+          const SizedBox(height: 4),
+          Text('Chase Field', style: T.serif(24, weight: FontWeight.w700)),
+          Text(LibretoCover.address, textAlign: TextAlign.center, style: T.serif(13.5, color: C.muted)),
+          Container(width: 120, height: 2, color: C.gold, margin: const EdgeInsets.symmetric(vertical: 14)),
+          Text(i.pick(LibretoCover.presides).toUpperCase(), style: T.head(11.5, color: C.muted, weight: FontWeight.w400, spacing: 0.9)),
+          const SizedBox(height: 4),
+          Text(i.pick(LibretoCover.bishop), textAlign: TextAlign.center, style: T.serif(21, color: C.green, weight: FontWeight.w700)),
+          Text(i.pick(LibretoCover.bishopRole), style: T.serif(15)),
+          const SizedBox(height: 18),
+          Text(i.pick(LibretoCover.foot).toUpperCase(), textAlign: TextAlign.center, style: T.head(11.5, color: C.muted, weight: FontWeight.w400, spacing: 0.9)),
         ]),
       );
 
-  Widget _partTitle(I18n i, LbPart p) => Padding(
-        padding: const EdgeInsets.only(top: 18, bottom: 8),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(i.pick(p.title).toUpperCase(), style: T.head(22, color: C.green)),
-          if (p.sub != null) Text(i.pick(p.sub), style: T.serif(14, color: C.goldDark, italic: true)),
-          Container(height: 2, width: 48, color: C.gold, margin: const EdgeInsets.only(top: 6)),
+  /// Small caps like the printed booklet ("Ritos iniciales" → RITOS INICIALES with smaller
+  /// lowercase letters). Done by hand so it works with any serif font.
+  Widget _smallCaps(String text, double size, Color color, {TextAlign align = TextAlign.start}) {
+    final spans = <TextSpan>[];
+    final buf = StringBuffer();
+    bool? lower;
+    void flush() {
+      if (buf.isEmpty) return;
+      spans.add(TextSpan(text: buf.toString().toUpperCase(), style: TextStyle(fontSize: lower == true ? size * 0.78 : size)));
+      buf.clear();
+    }
+
+    for (final ch in text.split('')) {
+      final isLower = ch != ch.toUpperCase();
+      if (lower != null && isLower != lower) flush();
+      lower = isLower;
+      buf.write(ch);
+    }
+    flush();
+    return Text.rich(TextSpan(style: T.serif(size, color: color).copyWith(letterSpacing: 0.4, height: 1.25), children: spans), textAlign: align);
+  }
+
+  Widget _partTitle(I18n i, LbPart p) => Container(
+        margin: const EdgeInsets.only(top: 30, bottom: 6),
+        padding: const EdgeInsets.only(top: 18),
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: C.line))),
+        child: Column(children: [
+          _smallCaps(i.pick(p.title), 22, C.green, align: TextAlign.center),
+          if (p.sub != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(i.pick(p.sub).toUpperCase(), textAlign: TextAlign.center, style: T.head(11, color: C.gold, weight: FontWeight.w700, spacing: 1.3)),
+            ),
         ]),
       );
 
@@ -213,20 +245,31 @@ class _ProgramScreenState extends State<ProgramScreen> {
     final credit = c is Map && c['credit'] is String ? c['credit'] as String : '';
     final blocks = staffText != null ? <Block>[if (s.hasMusic) M] : s.blocks;
 
+    // Live "now": thin red bar on the left + pulsing red dot after the title (like the web app).
     return Container(
       key: _keys[s.id],
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: EdgeInsets.only(left: isNow ? 12 : 0),
-      decoration: BoxDecoration(border: isNow ? const Border(left: BorderSide(color: C.red, width: 4)) : null),
+      padding: const EdgeInsets.only(top: 4, bottom: 6, left: 10),
+      transform: Matrix4.translationValues(-10, 0, 0),
+      decoration: BoxDecoration(border: Border(left: BorderSide(color: isNow ? _red : Colors.transparent, width: 3))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(i.pick(s.title), style: T.head(19, color: isNow ? C.red : C.ink)),
-        if (s.ref != null) Text(i.pick(s.ref), style: T.serif(13.5, color: C.goldDark, italic: true)),
-        const SizedBox(height: 6),
+        const SizedBox(height: 14),
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Flexible(child: _smallCaps(i.pick(s.title), 19, C.green)),
+          if (isNow) ...[
+            const SizedBox(width: 8),
+            Container(width: 8, height: 8, decoration: const BoxDecoration(color: _red, shape: BoxShape.circle)),
+          ],
+        ]),
+        if (s.ref != null) Padding(padding: const EdgeInsets.only(top: 2, bottom: 4), child: Text(i.pick(s.ref), style: T.serif(14.5, weight: FontWeight.w700))),
         if (staffText != null) ..._staffText(staffText),
         for (final b in blocks) _block(i, b, s, {'imgs': imgs, 'credit': credit}),
       ]),
     );
   }
+
+  static const _paper = Color(0xFFFBF8F1);
+  static const _red = Color(0xFFD93A3A);
+  static const _rubric = Color(0xFF77736A);
 
   static List<String> _strings(dynamic v) {
     if (v is List) return v.whereType<String>().toList();
@@ -248,51 +291,57 @@ class _ProgramScreenState extends State<ProgramScreen> {
     return Text.rich(TextSpan(style: style, children: spans), textAlign: align);
   }
 
-  Widget _pad(Widget w) => Padding(padding: const EdgeInsets.only(bottom: 8), child: w);
+  Widget _pad(Widget w, [double v = 6]) => Padding(padding: EdgeInsets.symmetric(vertical: v), child: w);
+
+  TextStyle get _body => T.serif(16).copyWith(height: 1.55);
 
   Widget _block(I18n i, Block b, LbSection? s, Map<String, Object> c) {
     final text = b.v == null ? '' : i.pick(b.v);
     switch (b.t) {
       case 'p':
-        return _pad(_md(text, T.serif(16.5)));
+        return _pad(_md(text, _body));
       case 'strong':
-        return _pad(_md(text, T.serif(16.5, weight: FontWeight.w700)));
+        return _pad(_md(text, _body.copyWith(fontWeight: FontWeight.w700)));
       case 'rubric':
-        return _pad(_md(text, T.serif(14.5, color: C.muted, italic: true)));
+        return _pad(_md(text, T.serif(15, color: _rubric, italic: true)));
       case 'note':
-        return _pad(_md(text, T.body(13, color: C.muted)));
+        return _pad(_md(text, T.serif(13.5, color: const Color(0xFF8A867C))), 8);
       case 'label':
-        return _pad(_md(text.toUpperCase(), T.label(color: C.goldDark)));
+        return Padding(padding: const EdgeInsets.only(top: 10, bottom: 2), child: _md(text, _body.copyWith(fontWeight: FontWeight.w700)));
       case 'center':
-        return _pad(_md(text, T.serif(16.5), align: TextAlign.center));
+        return _pad(_md(text, _body, align: TextAlign.center), 10);
       case 'resp':
-        return _pad(_resp(i.pick(b.who), text, people: true));
+        return _pad(_resp(i.pick(b.who), text, people: true), 8);
       case 'list':
         return _pad(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           for (var n = 0; n < b.items.length; n++)
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                SizedBox(width: 30, child: Text((n + 1).toString().padLeft(2, '0'), style: T.head(15, color: C.gold))),
-                Expanded(child: _md(i.pick(b.items[n]), T.serif(16))),
+                SizedBox(
+                  width: 26,
+                  child: Padding(padding: const EdgeInsets.only(top: 3), child: Text((n + 1).toString().padLeft(2, '0'), style: T.head(12, color: C.gold, weight: FontWeight.w700))),
+                ),
+                Expanded(child: _md(i.pick(b.items[n]), _body)),
               ]),
             ),
         ]));
       case 'songs':
+        // Song list: tap → jumps to the song (dashed lines, gold ↓ like the booklet).
         return _pad(Column(children: [
           for (final song in b.songs)
             InkWell(
               onTap: () => _jump(song.to),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(i.pick(song.label), style: T.body(14, weight: FontWeight.w700, color: C.green)),
-                      Text(i.pick(song.song), style: T.serif(15, italic: true)),
-                    ]),
-                  ),
-                  const Icon(Icons.chevron_right, color: C.gold),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE3DCCD)))),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(i.pick(song.label), style: T.serif(14, weight: FontWeight.w700)),
+                  Text.rich(TextSpan(children: [
+                    TextSpan(text: i.pick(song.song), style: T.serif(14.5, color: const Color(0xFF6F6A5E))),
+                    TextSpan(text: ' ↓', style: T.serif(14.5, color: C.gold)),
+                  ])),
                 ]),
               ),
             ),
@@ -304,12 +353,10 @@ class _ProgramScreenState extends State<ProgramScreen> {
     }
   }
 
-  Widget _resp(String who, String say, {required bool people}) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8, top: 2),
-          child: Text(who, style: T.head(13, color: people ? C.goldDark : C.muted, weight: FontWeight.w700)),
-        ),
-        Expanded(child: _md(say, T.serif(16.5, weight: people ? FontWeight.w700 : FontWeight.w400))),
+  /// Who speaks (small, gold for the people) on top; what they say below (bold for the people).
+  Widget _resp(String who, String say, {required bool people}) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(who, style: T.head(11, color: people ? C.gold : C.muted, weight: FontWeight.w700, spacing: 0.9)),
+        _md(say, people ? T.serif(17, weight: FontWeight.w700) : _body),
       ]);
 
   /// Staff-pasted text → paragraphs, rubrics (_text_ or > text) and dialogue lines (WHO: text).
@@ -317,7 +364,7 @@ class _ProgramScreenState extends State<ProgramScreen> {
     final out = <Widget>[];
     var para = <String>[];
     void flush() {
-      if (para.isNotEmpty) out.add(_pad(Text(para.join('\n'), style: T.serif(16.5))));
+      if (para.isNotEmpty) out.add(_pad(Text(para.join('\n'), style: _body)));
       para = [];
     }
 
@@ -330,14 +377,14 @@ class _ProgramScreenState extends State<ProgramScreen> {
       final rub = RegExp(r'^_(.+)_$').firstMatch(line) ?? RegExp(r'^>\s*(.+)$').firstMatch(line);
       if (rub != null) {
         flush();
-        out.add(_pad(Text(rub.group(1)!, style: T.serif(14.5, color: C.muted, italic: true))));
+        out.add(_pad(Text(rub.group(1)!, style: T.serif(15, color: _rubric, italic: true))));
         continue;
       }
       final m = RegExp(r'^([A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜ .\/]{0,24}):\s*(.*)$').firstMatch(line);
       if (m != null) {
         flush();
         final who = m.group(1)!.trim();
-        out.add(_pad(_resp(who, m.group(2)!, people: peopleSpeakers.contains(who.toUpperCase()))));
+        out.add(_pad(_resp(who, m.group(2)!, people: peopleSpeakers.contains(who.toUpperCase())), 8));
         continue;
       }
       para.add(line);
@@ -349,19 +396,18 @@ class _ProgramScreenState extends State<ProgramScreen> {
   /* --------------------------------------------------------- sheet music */
   Widget _music(I18n i, LbSection? s, List<String> keys, String credit) {
     if (keys.isEmpty) {
+      if (s == null || !s.hasMusic) return const SizedBox.shrink();
       return Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(color: C.cardSoft, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.cardBorder)),
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFECE4D3))),
         child: Column(children: [
           for (var n = 0; n < 2; n++)
-            Container(
-              height: 18,
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-              decoration: const BoxDecoration(border: Border.symmetric(horizontal: BorderSide(color: C.cardBorder))),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(children: [for (var l = 0; l < 5; l++) Container(height: 1, margin: const EdgeInsets.only(top: 4), color: const Color(0xFFCFC6B2))]),
             ),
-          const SizedBox(height: 6),
-          Text(i.t('musicSoon'), style: T.body(13, color: C.muted)),
+          Text(i.t('musicSoon'), style: T.body(12, color: C.muted)),
         ]),
       );
     }
@@ -374,19 +420,19 @@ class _ProgramScreenState extends State<ProgramScreen> {
             if (img == null) return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator(color: C.gold)));
             return GestureDetector(
               onTap: () => _zoom(context, i, img, s == null ? '' : i.pick(s.title)),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(color: C.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.cardBorder)),
-                clipBehavior: Clip.antiAlias,
+              // Printed straight on the page, no frame: the scan's white paper blends into the
+              // booklet's paper (multiply), like the web app (Tomás, Oct 18).
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 6),
                 child: Stack(children: [
-                  Image(image: img, width: double.infinity, fit: BoxFit.fitWidth),
-                  const Positioned(right: 6, bottom: 6, child: Icon(Icons.zoom_out_map, color: C.goldDark, size: 20)),
+                  Image(image: img, width: double.infinity, fit: BoxFit.fitWidth, color: _paper, colorBlendMode: BlendMode.multiply),
+                  const Positioned(right: 0, bottom: 0, child: Opacity(opacity: 0.55, child: Icon(Icons.open_in_full, color: C.muted, size: 16))),
                 ]),
               ),
             );
           },
         ),
-      if (credit.isNotEmpty) _pad(Text(credit, style: T.body(11, color: C.muted))),
+      if (credit.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 2, bottom: 6), child: Text(credit, style: T.body(10.5, color: const Color(0xFF8F8A7C)).copyWith(height: 1.35))),
     ]);
   }
 
@@ -412,7 +458,22 @@ class _ProgramScreenState extends State<ProgramScreen> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           foregroundColor: C.white,
+          automaticallyImplyLeading: false,
           title: Text(label, style: T.body(15, color: C.white)),
+          // Big white round ✕ on the right, like the web app.
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Builder(
+                builder: (ctx) => IconButton.filled(
+                  style: IconButton.styleFrom(backgroundColor: C.white, foregroundColor: C.green),
+                  icon: const Icon(Icons.close),
+                  tooltip: i.s('Close', 'Cerrar'),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ],
         ),
         body: Column(children: [
           Expanded(
