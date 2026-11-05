@@ -3,6 +3,7 @@
  * language = the phone's language (no question), green header with the TILMA logo (tap → Diocese crest),
  * swipeable tabs and the bottom tab bar. Ported from the web app's js/app.js.
  */
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -38,9 +39,22 @@ class RoeApp extends StatelessWidget {
       title: app.i.t('appAccent'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
+      scrollBehavior: const _AppScroll(),
       home: const Shell(),
     );
   }
+}
+
+/// Every screen can be pulled down (to refresh) even when it's short, and in the web
+/// preview the tabs can also be swiped with the mouse, like the web app's iPhone preview.
+class _AppScroll extends MaterialScrollBehavior {
+  const _AppScroll();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) => AlwaysScrollableScrollPhysics(parent: super.getScrollPhysics(context));
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {...super.dragDevices, PointerDeviceKind.mouse, PointerDeviceKind.trackpad};
 }
 
 /* -------------------------------------------------------------------- shell */
@@ -91,6 +105,19 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
     setState(() => _extra = route);
   }
 
+  /// Pull down at the top of any screen to refresh (Tomás, Oct 18): reconnects the live
+  /// data (announcements, "now", interpreters) and redraws the screen.
+  Widget _pull(Widget child) => RefreshIndicator(
+        color: C.green,
+        backgroundColor: C.white,
+        onRefresh: () async {
+          Live.I.resume();
+          await Future<void>.delayed(const Duration(milliseconds: 700));
+          if (mounted) setState(() {});
+        },
+        child: child,
+      );
+
   void _goHome() {
     setState(() => _extra = null);
     _pages.jumpToPage(0);
@@ -135,22 +162,23 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         body: Column(children: [
-          // Green header, also behind the iPhone status bar.
+          // Green header, also behind the iPhone status bar. Content centered in the same
+          // column as the screens (max 480 px, like the web app) on iPad / computer.
           Container(
             color: C.green,
             child: SafeArea(
               bottom: false,
-              child: SizedBox(
-                height: 64,
+              child: _col(SizedBox(
+                height: 70,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(children: [
                     Expanded(
                       child: route == 'news'
                           ? Align(alignment: Alignment.centerLeft, child: _sunLogo())
                           : Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                              Text(i.t('appAccent'), style: T.serif(13, color: C.gold2, italic: true)),
-                              Text(title.toUpperCase(), style: T.head(24, color: C.white)),
+                              Text(i.t('appAccent'), maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: T.serif(19, color: C.gold2, italic: true).copyWith(height: 1.1)),
+                              Text(title.toUpperCase(), maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: T.head(27, color: C.white)),
                             ]),
                     ),
                     // Logo ALWAYS top right (Tomás's rule). Tap: TILMA ↔ Diocese of Phoenix crest.
@@ -158,14 +186,16 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
                       onTap: () => setState(() => _diocese = !_diocese),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 250),
-                        child: AssetLogo(_diocese ? 'diocese-logo.png' : 'tilma-logo.webp', key: ValueKey(_diocese), height: 46),
+                        child: AssetLogo(_diocese ? 'diocese-logo.png' : 'tilma-logo.webp', key: ValueKey(_diocese), height: 52),
                       ),
                     ),
                   ]),
                 ),
-              ),
+              )),
             ),
           ),
+          // Gold-stroked wave under the header: green above, parchment below (web app).
+          const SizedBox(width: double.infinity, height: 22, child: CustomPaint(painter: _WavePainter())),
           // Live announcement from the staff panel, on every screen.
           ValueListenableBuilder<LiveState>(
             valueListenable: Live.I.state,
@@ -190,45 +220,74 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
             },
           ),
           Expanded(
-            child: Stack(children: [
+            child: _col(Stack(children: [
               PageView(
                 controller: _pages,
                 onPageChanged: (n) => setState(() => _index = n),
-                children: [for (final t in _tabs) _KeepAlive(child: _screen(t[0]))],
+                children: [for (final t in _tabs) _KeepAlive(child: _pull(_screen(t[0])))],
               ),
               if (_extra != null)
                 Positioned.fill(
                   child: ColoredBox(
                     color: C.paper,
-                    child: _extra == 'commit' ? CommitScreen(onHome: _goHome) : const InfoScreen(),
+                    child: _pull(_extra == 'commit' ? CommitScreen(onHome: _goHome) : const InfoScreen()),
                   ),
                 ),
-            ]),
+            ])),
           ),
         ]),
-        bottomNavigationBar: NavigationBar(
-          backgroundColor: C.white,
-          indicatorColor: const Color(0x33C59344),
-          selectedIndex: _index,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          height: 66,
-          onDestinationSelected: (n) {
-            setState(() => _extra = null);
-            _pages.jumpToPage(n);
-          },
-          destinations: [
-            for (final t in _tabs)
-              NavigationDestination(
-                icon: Icon(routeIcon(t[0]), color: C.muted),
-                selectedIcon: Icon(routeIcon(t[0]), color: C.green),
-                label: i.t(t[1]),
-              ),
-          ],
+        // Bottom tab bar like the web app: icon + small uppercase label, gold line under
+        // the active tab (none while Altar call / Info is open).
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(color: C.white, border: Border(top: BorderSide(color: Color(0xFFE7E0D2)))),
+          child: SafeArea(
+            top: false,
+            child: _col(SizedBox(
+              height: 62,
+              child: Row(children: [
+                for (var n = 0; n < _tabs.length; n++)
+                  Expanded(
+                    child: Semantics(
+                      selected: _extra == null && n == _index,
+                      button: true,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() => _extra = null);
+                          _pages.jumpToPage(n);
+                        },
+                        child: Builder(builder: (_) {
+                          final on = _extra == null && n == _index;
+                          return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Icon(routeIcon(_tabs[n][0]), size: 22, color: on ? C.green : C.muted),
+                            const SizedBox(height: 3),
+                            Text(i.t(_tabs[n][1]).toUpperCase(),
+                                maxLines: 1,
+                                overflow: TextOverflow.fade,
+                                softWrap: false,
+                                style: T.head(10.5, color: on ? C.green : C.muted, weight: FontWeight.w700, spacing: 0.3)),
+                            const SizedBox(height: 3),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: on ? 22 : 0,
+                              height: 3,
+                              decoration: BoxDecoration(color: C.gold, borderRadius: BorderRadius.circular(2)),
+                            ),
+                          ]);
+                        }),
+                      ),
+                    ),
+                  ),
+              ]),
+            )),
+          ),
         ),
       ),
       ),
     );
   }
+
+  /// Same column width as the web app (480 px), centered on wide screens.
+  static Widget _col(Widget child) => Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: child));
 
   // On News the Catholic Sun logo (white) replaces the title (Tomás, Oct 16).
   Widget _sunLogo() => SvgPicture.asset(
@@ -257,4 +316,35 @@ class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMix
     super.build(context);
     return widget.child;
   }
+}
+
+/// The web app's header wave: path "M0 0 H480 V10 C340 40 170 -6 0 24 Z" (viewBox 480×36,
+/// stretched to the screen width) in green, with the gold line along its lower edge.
+class _WavePainter extends CustomPainter {
+  const _WavePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sx = size.width / 480, sy = size.height / 36;
+    Offset p(double x, double y) => Offset(x * sx, y * sy);
+    final fill = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(p(480, 10).dx, p(480, 10).dy)
+      ..cubicTo(p(340, 40).dx, p(340, 40).dy, p(170, -6).dx, p(170, -6).dy, p(0, 24).dx, p(0, 24).dy)
+      ..close();
+    canvas.drawPath(fill, Paint()..color = C.green);
+    final line = Path()
+      ..moveTo(p(0, 24).dx, p(0, 24).dy)
+      ..cubicTo(p(170, -6).dx, p(170, -6).dy, p(340, 40).dx, p(340, 40).dy, p(480, 10).dx, p(480, 10).dy);
+    canvas.drawPath(
+        line,
+        Paint()
+          ..color = C.gold
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
