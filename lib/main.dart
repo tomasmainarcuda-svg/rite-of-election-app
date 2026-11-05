@@ -77,21 +77,23 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
     if (s == AppLifecycleState.resumed) Live.I.resume();
   }
 
+  /// Altar call / Info: not tabs. They open INSIDE the app (same green header with the
+  /// TILMA logo, tab bar still at the bottom), like the web app — not as a separate page.
+  String? _extra;
+
   void go(String route) {
     final n = _tabs.indexWhere((t) => t[0] == route);
     if (n >= 0) {
+      setState(() => _extra = null);
       _pages.animateToPage(n, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
       return;
     }
-    // Altar call and Info are not tabs: they open on top, from Home's quick links.
-    final i = AppScope.of(context).i;
-    final title = i.t(route == 'commit' ? 'titleCommit' : 'titleInfo');
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => Scaffold(
-        appBar: AppBar(backgroundColor: C.green, foregroundColor: C.white, title: Text(title.toUpperCase(), style: T.head(20, color: C.white))),
-        body: route == 'commit' ? const CommitScreen() : const InfoScreen(),
-      ),
-    ));
+    setState(() => _extra = route);
+  }
+
+  void _goHome() {
+    setState(() => _extra = null);
+    _pages.jumpToPage(0);
   }
 
   Widget _screen(String route) {
@@ -117,8 +119,19 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final i = AppScope.of(context).i;
-    final route = _tabs[_index][0];
-    return AnnotatedRegion<SystemUiOverlayStyle>(
+    final route = _extra ?? _tabs[_index][0];
+    final title = switch (_extra) {
+      'commit' => i.t('titleCommit'),
+      'info' => i.t('titleInfo'),
+      _ => i.t(_tabs[_index][2]),
+    };
+    return PopScope(
+      // Phone "back" (Android) closes Altar call / Info first.
+      canPop: _extra == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _extra = null);
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         body: Column(children: [
@@ -137,7 +150,7 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
                           ? Align(alignment: Alignment.centerLeft, child: _sunLogo())
                           : Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
                               Text(i.t('appAccent'), style: T.serif(13, color: C.gold2, italic: true)),
-                              Text(i.t(_tabs[_index][2]).toUpperCase(), style: T.head(24, color: C.white)),
+                              Text(title.toUpperCase(), style: T.head(24, color: C.white)),
                             ]),
                     ),
                     // Logo ALWAYS top right (Tomás's rule). Tap: TILMA ↔ Diocese of Phoenix crest.
@@ -177,11 +190,20 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
             },
           ),
           Expanded(
-            child: PageView(
-              controller: _pages,
-              onPageChanged: (n) => setState(() => _index = n),
-              children: [for (final t in _tabs) _KeepAlive(child: _screen(t[0]))],
-            ),
+            child: Stack(children: [
+              PageView(
+                controller: _pages,
+                onPageChanged: (n) => setState(() => _index = n),
+                children: [for (final t in _tabs) _KeepAlive(child: _screen(t[0]))],
+              ),
+              if (_extra != null)
+                Positioned.fill(
+                  child: ColoredBox(
+                    color: C.paper,
+                    child: _extra == 'commit' ? CommitScreen(onHome: _goHome) : const InfoScreen(),
+                  ),
+                ),
+            ]),
           ),
         ]),
         bottomNavigationBar: NavigationBar(
@@ -190,7 +212,10 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
           selectedIndex: _index,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           height: 66,
-          onDestinationSelected: (n) => _pages.jumpToPage(n),
+          onDestinationSelected: (n) {
+            setState(() => _extra = null);
+            _pages.jumpToPage(n);
+          },
           destinations: [
             for (final t in _tabs)
               NavigationDestination(
@@ -200,6 +225,7 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
               ),
           ],
         ),
+      ),
       ),
     );
   }
