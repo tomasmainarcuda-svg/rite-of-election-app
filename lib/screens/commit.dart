@@ -18,7 +18,9 @@ const _options = ['deepen', 'serve', 'sacraments', 'contact'];
 const _other = 'other';
 
 class CommitScreen extends StatefulWidget {
-  const CommitScreen({super.key});
+  /// "Back to Home" on the thank-you view.
+  final VoidCallback? onHome;
+  const CommitScreen({super.key, this.onHome});
 
   @override
   State<CommitScreen> createState() => _CommitScreenState();
@@ -143,7 +145,7 @@ class _CommitScreenState extends State<CommitScreen> {
               Text(i.t('savedLocally'), textAlign: TextAlign.center, style: T.body(13, color: C.muted)),
             ],
             const SizedBox(height: 16),
-            SmallButton(i.t('backHome'), onTap: () => Navigator.of(context).maybePop()),
+            SmallButton(i.t('backHome'), onTap: widget.onHome ?? () => Navigator.of(context).maybePop()),
             const SizedBox(height: 8),
             TextButton(onPressed: _again, child: Text(i.t('submitAnother'), style: T.body(14, color: C.green, weight: FontWeight.w600))),
           ]),

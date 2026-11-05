@@ -112,6 +112,10 @@ class _NewsCard extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => ph,
         loadingBuilder: (_, child, p) => p == null ? child : ph,
+        // In the web preview the Catholic Sun's photos come from another site (S3), which the
+        // browser blocks for canvas drawing; this shows them as a normal <img> instead.
+        // (No effect on iPhone/Android.)
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
       ),
       if (item.type == 'video')
         Positioned.fill(

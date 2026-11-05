@@ -56,15 +56,17 @@ class _TranslateScreenState extends State<TranslateScreen> {
             ),
             AppCard(
               child: Column(children: [
+                // Grey (looks off) until the interpreter is on air, like the web app;
+                // green with a gold ring when there is something to listen to.
                 Container(
                   width: 112,
                   height: 112,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: ch.none ? C.cardBorder : C.green,
-                    border: Border.all(color: live ? C.gold : Colors.transparent, width: 5),
+                    color: live ? C.green : const Color(0xFFAFC0B8),
+                    border: Border.all(color: live ? C.gold : const Color(0xFFE9D9B8), width: 6),
                   ),
-                  child: Icon(Icons.play_arrow_rounded, size: 64, color: ch.none ? C.muted : C.white),
+                  child: Icon(Icons.play_arrow_rounded, size: 64, color: live ? C.white : const Color(0xFFF3E6CC)),
                 ),
                 const SizedBox(height: 12),
                 Text(
