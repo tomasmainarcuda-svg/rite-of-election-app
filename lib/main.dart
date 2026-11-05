@@ -287,7 +287,10 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
   }
 
   /// Same column width as the web app (480 px), centered on wide screens.
-  static Widget _col(Widget child) => Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: child));
+  // heightFactor 1: only center sideways — never grow taller than the content (the tab bar
+  // would otherwise take the whole screen).
+  static Widget _col(Widget child) =>
+      Center(heightFactor: 1, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: child));
 
   // On News the Catholic Sun logo (white) replaces the title (Tomás, Oct 16).
   Widget _sunLogo() => SvgPicture.asset(
