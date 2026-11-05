@@ -7,7 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'screens/commit.dart';
 import 'screens/home.dart';
+import 'screens/info.dart';
+import 'screens/map.dart';
+import 'screens/news.dart';
+import 'screens/photos.dart';
+import 'screens/program.dart';
+import 'screens/translate.dart';
+import 'services/live.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
@@ -16,6 +24,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = AppState();
   await state.load();
+  Live.I.start(); // staff panel live data (announcement, "now" in Program, interpreters on air)
   runApp(AppScope(state: state, child: const RoeApp()));
 }
 
@@ -51,10 +60,22 @@ class Shell extends StatefulWidget {
   State<Shell> createState() => _ShellState();
 }
 
-class _ShellState extends State<Shell> {
+class _ShellState extends State<Shell> with WidgetsBindingObserver {
   final _pages = PageController();
   int _index = 0;
   bool _diocese = false; // header logo: TILMA ↔ Diocese crest
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  // Phone unlocked / app back in front → reconnect the live data right away.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.resumed) Live.I.resume();
+  }
 
   void go(String route) {
     final n = _tabs.indexWhere((t) => t[0] == route);
@@ -68,7 +89,7 @@ class _ShellState extends State<Shell> {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => Scaffold(
         appBar: AppBar(backgroundColor: C.green, foregroundColor: C.white, title: Text(title.toUpperCase(), style: T.head(20, color: C.white))),
-        body: ComingSoon(title),
+        body: route == 'commit' ? const CommitScreen() : const InfoScreen(),
       ),
     ));
   }
@@ -77,12 +98,18 @@ class _ShellState extends State<Shell> {
     final i = AppScope.of(context).i;
     return switch (route) {
       'home' => HomeScreen(onGo: go),
+      'program' => const ProgramScreen(),
+      'photos' => const PhotosScreen(),
+      'map' => const MapScreen(),
+      'translate' => const TranslateScreen(),
+      'news' => NewsScreen(onGo: go),
       _ => ComingSoon(i.t(_tabs.firstWhere((t) => t[0] == route)[2])),
     };
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pages.dispose();
     super.dispose();
   }
@@ -125,6 +152,29 @@ class _ShellState extends State<Shell> {
                 ),
               ),
             ),
+          ),
+          // Live announcement from the staff panel, on every screen.
+          ValueListenableBuilder<LiveState>(
+            valueListenable: Live.I.state,
+            builder: (context, live, _) {
+              final text = live.announcementText(AppScope.of(context).lang);
+              if (text.isEmpty) return const SizedBox.shrink();
+              return Container(
+                width: double.infinity,
+                color: C.gold,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Padding(padding: EdgeInsets.only(top: 3), child: Icon(Icons.campaign_outlined, color: C.white, size: 20)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(i.t('announcement').toUpperCase(), style: T.label(color: C.green)),
+                      Text(text, style: T.body(15, color: C.white, weight: FontWeight.w700)),
+                    ]),
+                  ),
+                ]),
+              );
+            },
           ),
           Expanded(
             child: PageView(
