@@ -1,0 +1,6 @@
+Logos que van en esta carpeta (copiar a mano; si falta alguno, la app lo oculta sin romperse):
+
+  tilma-logo.webp          ← Promo Kit/Logos /TILMA-Render-HD-Original.webp
+  diocese-logo.png         ← Claude Vault/TILMA Mission Circle/_assets/diocese_logo_rgba.png
+  dpc-logo.png             ← el logo de la Diócesis con letras (el mismo de la web: App/assets/dpc-logo.png)
+  catholic-sun-logo.svg    ← Claude Vault/Rite of Election/App/assets/catholic-sun-logo.svg
