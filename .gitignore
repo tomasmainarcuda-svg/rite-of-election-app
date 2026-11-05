@@ -1,0 +1,12 @@
+# macOS files the external disk (TOMO) creates next to every file
+._*
+.DS_Store
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/

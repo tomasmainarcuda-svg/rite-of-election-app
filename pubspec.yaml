@@ -1,0 +1,26 @@
+name: rite_of_election
+description: App oficial del Rito de Elección — Diócesis de Phoenix, Chase Field.
+publish_to: "none"
+version: 2.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.3.2
+  http: ^1.2.2
+  url_launcher: ^6.3.0
+  flutter_svg: ^2.0.10
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
