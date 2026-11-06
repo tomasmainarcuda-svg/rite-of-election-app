@@ -3,6 +3,7 @@
  * language = the phone's language (no question), green header with the TILMA logo (tap → Diocese crest),
  * swipeable tabs and the bottom tab bar. Ported from the web app's js/app.js.
  */
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -93,7 +94,13 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
 
   /// Pull down at the top of any screen to refresh (Tomás, Oct 18): reconnects the live
   /// data (announcements, "now", interpreters) and redraws the screen.
-  Widget _pull(Widget child) => RefreshIndicator(
+  /// Phones and tablets only (also in the web preview on an iPhone); on a computer it got in
+  /// the way of the mouse wheel.
+  static bool get _touch => defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android;
+
+  Widget _pull(Widget child) => !_touch
+      ? child
+      : RefreshIndicator(
         color: C.green,
         backgroundColor: C.white,
         onRefresh: () async {
