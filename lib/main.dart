@@ -3,6 +3,8 @@
  * language = the phone's language (no question), green header with the TILMA logo (tap → Diocese crest),
  * swipeable tabs and the bottom tab bar. Ported from the web app's js/app.js.
  */
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
@@ -78,7 +80,6 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> with WidgetsBindingObserver {
   final _pages = PageController();
   int _index = 0;
-  bool _diocese = false; // header logo: TILMA ↔ Diocese crest
 
   @override
   void initState() {
@@ -188,14 +189,9 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
                               Text(title.toUpperCase(), maxLines: 1, overflow: TextOverflow.fade, softWrap: false, style: T.head(27, color: C.white)),
                             ]),
                     ),
-                    // Logo ALWAYS top right (Tomás's rule). Tap: TILMA ↔ Diocese of Phoenix crest.
-                    GestureDetector(
-                      onTap: () => setState(() => _diocese = !_diocese),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: AssetLogo(_diocese ? 'diocese-logo.png' : 'tilma-logo.webp', key: ValueKey(_diocese), height: 52),
-                      ),
-                    ),
+                    // Logo ALWAYS top right (Tomás's rule). Tap: TILMA ↔ Diocese of Phoenix crest,
+                    // with the web app's 3D card flip around the logo's center.
+                    const _LogoFlip(),
                   ]),
                 ),
               )),
@@ -357,4 +353,67 @@ class _WavePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// The web app's header logo flip (Oct 18): tap → TILMA turns over like a card (rotateY,
+/// 0.55 s, same easing) and the Diocese crest comes out the other side, both on the same
+/// axis (the center of the logo). Tap again to flip back.
+class _LogoFlip extends StatefulWidget {
+  const _LogoFlip();
+
+  @override
+  State<_LogoFlip> createState() => _LogoFlipState();
+}
+
+class _LogoFlipState extends State<_LogoFlip> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
+  late final Animation<double> _t = CurvedAnimation(parent: _c, curve: const Cubic(.3, .7, .3, 1), reverseCurve: const Cubic(.3, .7, .3, 1).flipped);
+  bool _diocese = false;
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  void _flip() {
+    setState(() => _diocese = !_diocese);
+    _diocese ? _c.forward() : _c.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'TILMA / Diocese of Phoenix',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _flip,
+        child: SizedBox(
+          width: 104,
+          height: 56,
+          child: AnimatedBuilder(
+            animation: _t,
+            builder: (context, _) {
+              final t = _t.value; // 0 = TILMA, 1 = crest
+              final front = t < 0.5;
+              // Front face turns 0 → 90°, back face −90° → 0 (the edge-on moment hides the swap).
+              final angle = front ? t * math.pi : (t - 1) * math.pi;
+              return Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 1 / 600) // perspective, like the web app's 600px
+                  ..rotateY(angle),
+                child: Center(
+                  child: front
+                      ? const AssetLogo('tilma-logo.webp', height: 52)
+                      : const AssetLogo('diocese-logo.png', height: 56),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 }
