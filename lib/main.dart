@@ -4,6 +4,7 @@
  * swipeable tabs and the bottom tab bar. Ported from the web app's js/app.js.
  */
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -39,9 +40,22 @@ class RoeApp extends StatelessWidget {
       title: app.i.t('appAccent'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
+      scrollBehavior: const _AppScroll(),
       home: const Shell(),
     );
   }
+}
+
+/// Short screens can still be pulled down (to refresh), and in the web preview on a computer
+/// the screens and tabs can also be dragged with the mouse, like the web app's preview.
+class _AppScroll extends MaterialScrollBehavior {
+  const _AppScroll();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) => AlwaysScrollableScrollPhysics(parent: super.getScrollPhysics(context));
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {...super.dragDevices, PointerDeviceKind.mouse};
 }
 
 /* -------------------------------------------------------------------- shell */
