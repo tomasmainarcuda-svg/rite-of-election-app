@@ -25,9 +25,11 @@ class T {
   static TextStyle head(double size, {Color color = C.ink, FontWeight weight = FontWeight.w800, double spacing = 0}) =>
       GoogleFonts.robotoCondensed(fontSize: size, fontWeight: weight, color: color, letterSpacing: spacing, height: 1.15);
 
-  static TextStyle serif(double size, {Color color = C.ink, bool italic = false, FontWeight weight = FontWeight.w400}) => TextStyle(
-        fontFamily: 'Georgia',
-        fontFamilyFallback: const ['Times New Roman', 'serif'],
+  /// Serif for the booklet and accents. Gelasio is metric-compatible with Georgia (the web
+  /// app's serif) and is bundled via Google Fonts, so it looks the same on iPhone, Android and
+  /// in the web preview (Georgia isn't available on Android or in the browser canvas).
+  static TextStyle serif(double size, {Color color = C.ink, bool italic = false, FontWeight weight = FontWeight.w400}) =>
+      GoogleFonts.gelasio(
         fontSize: size,
         color: color,
         fontStyle: italic ? FontStyle.italic : FontStyle.normal,

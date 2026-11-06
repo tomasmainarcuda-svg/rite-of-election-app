@@ -54,7 +54,7 @@ class _AppScroll extends MaterialScrollBehavior {
   ScrollPhysics getScrollPhysics(BuildContext context) => AlwaysScrollableScrollPhysics(parent: super.getScrollPhysics(context));
 
   @override
-  Set<PointerDeviceKind> get dragDevices => {...super.dragDevices, PointerDeviceKind.mouse, PointerDeviceKind.trackpad};
+  Set<PointerDeviceKind> get dragDevices => {...super.dragDevices, PointerDeviceKind.mouse};
 }
 
 /* -------------------------------------------------------------------- shell */
@@ -295,7 +295,7 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
   // On News the Catholic Sun logo (white) replaces the title (Tomás, Oct 16).
   Widget _sunLogo() => SvgPicture.asset(
         'assets/images/catholic-sun-logo.svg',
-        height: 34,
+        height: 46,
         colorFilter: const ColorFilter.mode(C.white, BlendMode.srcIn),
         placeholderBuilder: (_) => Text('THE CATHOLIC SUN', style: T.head(22, color: C.white)),
       );
