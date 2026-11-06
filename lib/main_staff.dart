@@ -3,7 +3,7 @@
  * One person on a tablet runs the 3 photo stations with "Siguiente / Atrás".
  * Same code base as the participants' app (theme, data, texts), different entry point:
  *   flutter build web -t lib/main_staff.dart
- * Front only for now: see services/photo_calls.dart for the backend hook.
+ * Sends to Firebase when the staff signs in with Google (services/photo_calls.dart).
  */
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +18,7 @@ Future<void> main() async {
   final state = AppState();
   await state.load();
   await PhotoCalls.I.load();
+  await PhotoCalls.I.initCloud(); // Firebase: Google sign-in + send the calls
   runApp(AppScope(state: state, child: const StaffApp()));
 }
 
