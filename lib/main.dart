@@ -18,7 +18,6 @@ import 'screens/map.dart';
 import 'screens/news.dart';
 import 'screens/photos.dart';
 import 'screens/program.dart';
-import 'screens/translate.dart';
 import 'services/live.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -66,7 +65,7 @@ const _tabs = [
   ['program', 'tabProgram', 'titleProgram'],
   ['photos', 'tabPhotos', 'titlePhotos'],
   ['map', 'tabMap', 'titleMap'],
-  ['translate', 'tabTranslate', 'titleTranslate'],
+  // Translation (radio) removed from the app and archived in DPC/Radio archivada (Tomás, Nov 5).
   ['news', 'navNews', 'titleNews'], // "News" replaced the old "More" tab (Tomás, Oct 16)
 ];
 
@@ -138,7 +137,6 @@ class _ShellState extends State<Shell> with WidgetsBindingObserver {
       'program' => const ProgramScreen(),
       'photos' => const PhotosScreen(),
       'map' => const MapScreen(),
-      'translate' => const TranslateScreen(),
       'news' => NewsScreen(onGo: go),
       _ => ComingSoon(i.t(_tabs.firstWhere((t) => t[0] == route)[2])),
     };
