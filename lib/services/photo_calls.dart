@@ -1,15 +1,20 @@
 /*
  * STAFF APP — photo calling state ("who is being called at each station").
  *
- * FRONT ONLY for now (Tomás, Nov 6): the position of each station is kept on this tablet
- * (so a refresh doesn't lose it). It does NOT reach the participants' app yet.
+ * Sends to Firebase (Nov 6): when the staff is signed in with the team's Google account,
+ * every "Siguiente / Atrás" writes
+ *   roe/live/stations/{id} = { nowGroup, done }     (+ roe/live/updatedAt)
+ * — the same place the old web staff panel uses. The database rules only let the staff
+ * account write there. Not signed in → TEST MODE: the position stays on this tablet only.
  *
- * Backend hook (later): every change goes through _publish(). There we'll write
- *   roe/live/stations/{id} = { nowGroup, done }
- * in Firebase with the staff Google sign-in; the participants' app reads that same path.
+ * It also LISTENS to roe/live/stations, so if another device moves a station, this tablet
+ * follows. The position is kept on the tablet too (a refresh never loses it).
  */
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,7 +30,18 @@ class PhotoCalls {
   /// Station id → index in that station's queue. index == queue length → station finished.
   final pos = ValueNotifier<Map<int, int>>({for (final s in stations) s.id: 0});
 
+  /// Signed-in staff account (null = test mode, nothing is sent).
+  final user = ValueNotifier<User?>(null);
+
+  /// Last send worked (true) / failed (false) / nothing sent yet (null).
+  final sent = ValueNotifier<bool?>(null);
+
+  /// Human-readable problem to show on screen (null = all good).
+  final problem = ValueNotifier<String?>(null);
+
   SharedPreferences? _prefs;
+  DatabaseReference? _live;
+  bool _cloudReady = false;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
@@ -36,6 +52,44 @@ class PhotoCalls {
         pos.value = {for (final s in stations) s.id: (m[s.id] ?? 0).clamp(0, queue(s.id).length).toInt()};
       }
     } catch (_) {}
+  }
+
+  /// Firebase project ecr-mesas (same one the web app uses). These values are public by design.
+  Future<void> initCloud() async {
+    try {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'AIzaSyAD1S_E_2y5D1QlIuDT9kL5kevX3jGXwLM',
+          appId: '1:743610525231:web:a3e4f0f445994f3f4008da',
+          messagingSenderId: '743610525231',
+          projectId: 'ecr-mesas',
+          authDomain: 'ecr-mesas.firebaseapp.com',
+          databaseURL: Config.databaseUrl,
+        ),
+      );
+      _live = FirebaseDatabase.instance.ref('${Config.dbRoot}/live');
+      _cloudReady = true;
+      FirebaseAuth.instance.authStateChanges().listen((u) => user.value = u);
+      // Follow what's in Firebase (reads are public).
+      _live!.child('stations').onValue.listen((e) => _fromCloud(e.snapshot.value), onError: (_) {});
+    } catch (e) {
+      problem.value = 'No se pudo conectar con Firebase: $e';
+    }
+  }
+
+  Future<void> signIn() async {
+    if (!_cloudReady) return;
+    problem.value = null;
+    try {
+      await FirebaseAuth.instance.signInWithPopup(GoogleAuthProvider());
+    } catch (e) {
+      problem.value = 'No se pudo entrar con Google: $e';
+    }
+  }
+
+  Future<void> signOut() async {
+    if (_cloudReady) await FirebaseAuth.instance.signOut();
+    sent.value = null;
   }
 
   /// Groups waiting at a station, in calling order (one entry per parish/group).
@@ -62,9 +116,7 @@ class PhotoCalls {
   void resetAll() {
     pos.value = {for (final s in stations) s.id: 0};
     _save();
-    for (final s in stations) {
-      _publish(s.id);
-    }
+    _publish([for (final s in stations) s.id]);
   }
 
   void _move(int stationId, int dir) {
@@ -74,13 +126,55 @@ class PhotoCalls {
     if (nxt == cur) return;
     pos.value = {...pos.value, stationId: nxt};
     _save();
-    _publish(stationId);
+    _publish([stationId]);
   }
 
   void _save() => _prefs?.setString(_kPos, jsonEncode(pos.value.map((k, v) => MapEntry('$k', v))));
 
-  /// Backend hook — not connected yet (front only). Later: write to Firebase here.
-  void _publish(int stationId) {
-    // TODO(backend): roe/live/stations/$stationId = { nowGroup: now(stationId)?.group ?? 0, done: done(stationId) }
+  /// Send the given stations to Firebase (only when a staff account is signed in).
+  Future<void> _publish(List<int> ids) async {
+    final ref = _live;
+    if (ref == null || user.value == null) return; // test mode: stays on this tablet
+    final update = <String, Object?>{'updatedAt': ServerValue.timestamp};
+    for (final id in ids) {
+      update['stations/$id'] = {'nowGroup': now(id)?.group ?? 0, 'done': done(id)};
+    }
+    try {
+      await ref.update(update);
+      sent.value = true;
+      problem.value = null;
+    } catch (e) {
+      sent.value = false;
+      problem.value = 'No se envió. ¿Esta cuenta de Google tiene permiso de staff? ($e)';
+    }
+  }
+
+  /// Firebase → tablet: { "1": {nowGroup, done}, ... } or a list with index = station id.
+  void _fromCloud(Object? v) {
+    Map<String, dynamic> m;
+    if (v is Map) {
+      m = v.map((k, val) => MapEntry('$k', val));
+    } else if (v is List) {
+      m = {for (var i = 0; i < v.length; i++) if (v[i] != null) '$i': v[i]};
+    } else {
+      return;
+    }
+    final next = {...pos.value};
+    for (final s in stations) {
+      final st = m['${s.id}'];
+      if (st is! Map) continue;
+      final q = queue(s.id);
+      if (st['done'] == true) {
+        next[s.id] = q.length;
+      } else {
+        final g = (st['nowGroup'] as num?)?.toInt() ?? 0;
+        final idx = q.indexWhere((p) => p.group == g);
+        next[s.id] = idx < 0 ? 0 : idx;
+      }
+    }
+    if (!mapEquals(next, pos.value)) {
+      pos.value = next;
+      _save();
+    }
   }
 }
