@@ -14,6 +14,11 @@ dependencies:
   url_launcher: ^6.3.0
   flutter_svg: ^2.0.10
   google_fonts: ^6.2.1
+  # Staff app only (sign in with Google + write the photo calls). The participants' app
+  # doesn't use them: it reads Firebase over plain HTTP (services/rtdb.dart).
+  firebase_core:
+  firebase_auth:
+  firebase_database:
 
 dev_dependencies:
   flutter_test:
