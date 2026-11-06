@@ -188,7 +188,6 @@ class _HomeScreenState extends State<HomeScreen> {
     const quick = [
       ['program', 'tabProgram'],
       ['photos', 'tabPhotos'],
-      ['translate', 'tabTranslate'],
       ['map', 'tabMap'],
       ['commit', 'navCommit'],
       ['info', 'navInfo'],
