@@ -3,7 +3,6 @@
  * language = the phone's language (no question), green header with the TILMA logo (tap → Diocese crest),
  * swipeable tabs and the bottom tab bar. Ported from the web app's js/app.js.
  */
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -39,22 +38,9 @@ class RoeApp extends StatelessWidget {
       title: app.i.t('appAccent'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
-      scrollBehavior: const _AppScroll(),
       home: const Shell(),
     );
   }
-}
-
-/// Every screen can be pulled down (to refresh) even when it's short, and in the web
-/// preview the tabs can also be swiped with the mouse, like the web app's iPhone preview.
-class _AppScroll extends MaterialScrollBehavior {
-  const _AppScroll();
-
-  @override
-  ScrollPhysics getScrollPhysics(BuildContext context) => AlwaysScrollableScrollPhysics(parent: super.getScrollPhysics(context));
-
-  @override
-  Set<PointerDeviceKind> get dragDevices => {...super.dragDevices, PointerDeviceKind.mouse};
 }
 
 /* -------------------------------------------------------------------- shell */
