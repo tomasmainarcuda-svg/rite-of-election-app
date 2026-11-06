@@ -28,7 +28,14 @@ jobs:
       # The project only has lib/ and assets/: create the missing web/ folder (does not touch lib/).
       - run: flutter create --platforms=web --project-name rite_of_election .
       - run: flutter pub get
+      # STAFF app (separate app, own link: /<repo>/staff/) — built first and set aside.
+      - run: flutter build web --release -t lib/main_staff.dart --base-href "/${{ github.event.repository.name }}/staff/"
+      - run: |
+          sed -i 's|<title>.*</title>|<title>Staff · Llamado a fotos</title>|' build/web/index.html
+          mv build/web /tmp/staff_web
+      # PARTICIPANTS' app (main link).
       - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+      - run: cp -r /tmp/staff_web build/web/staff
       - name: Publish to the gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
