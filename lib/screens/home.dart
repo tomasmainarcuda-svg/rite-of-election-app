@@ -280,7 +280,7 @@ class _AgendaCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
               child: SizedBox(
-                width: 72,
+                width: 88, // room for "11:00 AM" on one line
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text.rich(TextSpan(children: [
                     TextSpan(text: t[0], style: T.head(26, color: past ? faded : C.ink).copyWith(height: 1)),
