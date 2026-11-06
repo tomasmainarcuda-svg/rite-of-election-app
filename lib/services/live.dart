@@ -42,13 +42,10 @@ class Live {
   final libreto = ValueNotifier<Map<String, dynamic>>({});
   final connected = ValueNotifier<bool>(true);
 
-  /// Interpreters on air: { es: true, vi: false } (from roe/onair/{ch}.live).
-  final onair = ValueNotifier<Map<String, bool>>({});
-
   static const _kLibreto = 'roe.libreto';
   static const _kImg = 'roe.libimg.';
 
-  RtdbWatch? _live, _lib, _onair;
+  RtdbWatch? _live, _lib;
   SharedPreferences? _prefs;
   final Map<String, Future<String?>> _pending = {};
 
@@ -67,21 +64,12 @@ class Live {
       _prefs?.setString(_kLibreto, jsonEncode(m));
     })
       ..start();
-    _onair = RtdbWatch('onair', onValue: (v) {
-      final m = <String, bool>{};
-      if (v is Map) {
-        v.forEach((k, val) => m['$k'] = val is Map && val['live'] == true);
-      }
-      onair.value = m;
-    })
-      ..start();
   }
 
   /// App came back to the foreground: reopen the streams right away.
   void resume() {
     _live?.reconnect();
     _lib?.reconnect();
-    _onair?.reconnect();
   }
 
   /// Sheet-music image for a key (data: URL or https URL), cached on the phone.
