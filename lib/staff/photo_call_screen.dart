@@ -93,18 +93,8 @@ class _PhotoCallScreenState extends State<PhotoCallScreen> {
             ),
           ),
         ),
-        // Front only: say clearly that taps don't reach the participants yet.
-        Container(
-          width: double.infinity,
-          color: C.gold2,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Text(
-            i.s('TEST MODE · sample data · not sent to the participants\' app yet',
-                'MODO PRUEBA · datos de ejemplo · todavía no se envía a la app de la gente'),
-            textAlign: TextAlign.center,
-            style: T.body(13, color: const Color(0xFF5A3E12), weight: FontWeight.w700),
-          ),
-        ),
+        // Status bar: are the taps being sent? (signed in → LIVE; otherwise TEST MODE + sign-in)
+        _StatusBar(i: i),
         Expanded(
           child: ValueListenableBuilder<Map<int, int>>(
             valueListenable: PhotoCalls.I.pos,
@@ -262,6 +252,72 @@ class _StationCard extends StatelessWidget {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+/// Says clearly whether the taps reach Firebase, and lets the staff sign in / out.
+class _StatusBar extends StatelessWidget {
+  final I18n i;
+  const _StatusBar({required this.i});
+
+  @override
+  Widget build(BuildContext context) {
+    final pc = PhotoCalls.I;
+    return AnimatedBuilder(
+      animation: Listenable.merge([pc.user, pc.sent, pc.problem]),
+      builder: (context, _) {
+        final u = pc.user.value;
+        final failed = pc.sent.value == false;
+        final live = u != null && !failed;
+        final bg = failed ? C.red : (live ? const Color(0xFF2E7D32) : C.gold2);
+        final fg = (failed || live) ? C.white : const Color(0xFF5A3E12);
+        final text = failed
+            ? i.s('NOT SENT · this account has no staff permission', 'NO SE ENVIÓ · esta cuenta no tiene permiso de staff')
+            : live
+                ? i.s('LIVE · every tap goes to the participants\' app · ${u?.email ?? ''}',
+                    'EN VIVO · cada toque se envía a la app de la gente · ${u?.email ?? ''}')
+                : i.s('TEST MODE · nothing is sent · sign in with the staff Google account to send',
+                    'MODO PRUEBA · no se envía nada · entrá con el Google del staff para enviar');
+        return Container(
+          width: double.infinity,
+          color: bg,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Column(children: [
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              children: [
+                if (live) const Icon(Icons.circle, size: 10, color: C.white),
+                Text(text, textAlign: TextAlign.center, style: T.body(13, color: fg, weight: FontWeight.w700)),
+                if (u == null)
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: C.green,
+                      visualDensity: VisualDensity.compact,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                    ),
+                    onPressed: pc.signIn,
+                    icon: const Icon(Icons.login, size: 16),
+                    label: Text(i.s('Sign in with Google', 'Entrar con Google')),
+                  )
+                else
+                  TextButton(
+                    onPressed: pc.signOut,
+                    style: TextButton.styleFrom(foregroundColor: fg, visualDensity: VisualDensity.compact),
+                    child: Text(i.s('Sign out', 'Salir')),
+                  ),
+              ],
+            ),
+            if (pc.problem.value != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(pc.problem.value!, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.body(11.5, color: fg)),
+              ),
+          ]),
+        );
+      },
     );
   }
 }
