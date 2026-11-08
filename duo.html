@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador iPhone Duo — Rite of Election</title>
+<style>
+  body{margin:0;background:#1b1d1c;color:#ddd;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  h1{font-size:18px;font-weight:600;margin:16px 20px 4px}
+  p.note{margin:0 20px 12px;color:#9aa;font-size:13px}
+  .row{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;padding:8px 20px 24px}
+  .dev{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .dev b{font-size:13px;color:#e2be7c;font-weight:600}
+  .dev small{font-size:12px;color:#8a9}
+  .bezel{background:#000;border-radius:44px;padding:14px;box-shadow:0 0 0 2px #444, 0 12px 30px rgba(0,0,0,.5);position:relative}
+  .bezel.open{border-radius:36px}
+  .bezel.open::after{content:"";position:absolute;top:14px;bottom:14px;left:50%;width:1px;background:rgba(255,255,255,.06)}
+  .bezel.land.open::after{top:50%;bottom:auto;left:14px;right:14px;width:auto;height:1px}
+  iframe{display:block;border:0;border-radius:30px;background:#f3efe7}
+  .bezel.open iframe{border-radius:22px}
+</style>
+</head>
+<body>
+<h1>Simulador iPhone Duo (medidas reales de pantalla)</h1>
+<p class="note">Cerrado: pantalla de afuera 466×678 pt (1398×2034 px). Abierto: pantalla de adentro 626×890 pt (1878×2670 px). Aproximación en el navegador; no reemplaza el simulador de Xcode.</p>
+<div class="row">
+  <div class="dev">
+    <b>Cerrado · pantalla de afuera</b>
+    <div class="bezel"><iframe src="./" width="466" height="678" title="Cerrado"></iframe></div>
+    <small>466 × 678</small>
+  </div>
+  <div class="dev">
+    <b>Abierto · vertical</b>
+    <div class="bezel open"><iframe src="./" width="626" height="890" title="Abierto vertical"></iframe></div>
+    <small>626 × 890</small>
+  </div>
+</div>
+<div class="row">
+  <div class="dev">
+    <b>Abierto · horizontal</b>
+    <div class="bezel open land"><iframe src="./" width="890" height="626" title="Abierto horizontal"></iframe></div>
+    <small>890 × 626</small>
+  </div>
+  <div class="dev">
+    <b>App del staff · abierto horizontal</b>
+    <div class="bezel open land"><iframe src="./staff/" width="890" height="626" title="Staff abierto horizontal"></iframe></div>
+    <small>890 × 626</small>
+  </div>
+</div>
+</body>
+</html>
