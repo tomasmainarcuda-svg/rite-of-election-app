@@ -25,6 +25,7 @@ import 'widgets/common.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerFontLicenses(); // bundled fonts' Open Font Licenses (theme.dart)
   final state = AppState();
   await state.load();
   Live.I.start(); // staff panel live data (announcement, "now" in Program, interpreters on air)

@@ -15,6 +15,7 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerFontLicenses(); // bundled fonts' Open Font Licenses (theme.dart)
   final state = AppState();
   await state.load();
   await PhotoCalls.I.load();
