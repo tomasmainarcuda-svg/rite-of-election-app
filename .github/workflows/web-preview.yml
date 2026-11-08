@@ -27,6 +27,8 @@ jobs:
           cache: true
       # The project only has lib/ and assets/: create the missing web/ folder (does not touch lib/).
       - run: flutter create --platforms=web --project-name rite_of_election .
+      # Fonts INSIDE the app: download them once here (official Google Fonts + licenses).
+      - run: python3 tool/fetch_fonts.py
       - run: flutter pub get
       # STAFF app (separate app, own link: /<repo>/staff/) — built first and set aside.
       - run: flutter build web --release -t lib/main_staff.dart --base-href "/${{ github.event.repository.name }}/staff/"
