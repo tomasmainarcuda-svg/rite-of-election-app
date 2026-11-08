@@ -4,8 +4,6 @@
  * big green "SIGUIENTE GRUPO" + small "↩" to undo. "ESTACIÓN TERMINADA" at the end.
  * Tablet landscape: the 3 cards side by side; phone: stacked.
  */
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../data/event_data.dart';
@@ -25,27 +23,7 @@ class PhotoCallScreen extends StatefulWidget {
 }
 
 class _PhotoCallScreenState extends State<PhotoCallScreen> {
-  Timer? _clock;
-  String _time = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _tick();
-    _clock = Timer.periodic(const Duration(seconds: 10), (_) => _tick());
-  }
-
-  void _tick() {
-    final d = DateTime.now();
-    final h = d.hour % 12 == 0 ? 12 : d.hour % 12;
-    if (mounted) setState(() => _time = '$h:${d.minute.toString().padLeft(2, '0')} ${d.hour < 12 ? 'AM' : 'PM'}');
-  }
-
-  @override
-  void dispose() {
-    _clock?.cancel();
-    super.dispose();
-  }
+  // (Clock removed from the header — Tomás, Nov 8.)
 
   Future<void> _confirmReset(I18n i) async {
     final ok = await showDialog<bool>(
@@ -72,7 +50,7 @@ class _PhotoCallScreenState extends State<PhotoCallScreen> {
     return Scaffold(
       backgroundColor: C.paper,
       body: Column(children: [
-        // Green header with title, clock and the TILMA logo (top right, like every screen).
+        // Green header with title and the TILMA logo (top right, like every screen).
         Container(
           color: C.green,
           child: SafeArea(
@@ -86,8 +64,6 @@ class _PhotoCallScreenState extends State<PhotoCallScreen> {
                     Text(i.s('PHOTO CALLS', 'LLAMADO A FOTOS'), style: T.head(26, color: C.white)),
                   ]),
                 ),
-                Text(_time, style: T.head(28, color: C.gold2)),
-                const SizedBox(width: 14),
                 const AssetLogo('tilma-logo.webp', height: 44),
               ]),
             ),
