@@ -13,7 +13,7 @@ dependencies:
   http: ^1.2.2
   url_launcher: ^6.3.0
   flutter_svg: ^2.0.10
-  google_fonts: ^6.2.1
+  # (google_fonts removed Nov 8: the fonts now ship inside the app, see below.)
   # Staff app only (sign in with Google + write the photo calls). The participants' app
   # doesn't use them: it reads Firebase over plain HTTP (services/rtdb.dart).
   firebase_core:
@@ -29,3 +29,39 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/licenses/
+
+  # Fonts INSIDE the app (no requests to Google when the app opens; works with no signal).
+  # The .ttf files are downloaded at build time by tool/fetch_fonts.py (official Google
+  # Fonts, SIL Open Font License — licenses in assets/licenses/, shown in the app).
+  fonts:
+    - family: RobotoCondensed
+      fonts:
+        - asset: assets/fonts/RobotoCondensed-400.ttf
+          weight: 400
+        - asset: assets/fonts/RobotoCondensed-600.ttf
+          weight: 600
+        - asset: assets/fonts/RobotoCondensed-700.ttf
+          weight: 700
+        - asset: assets/fonts/RobotoCondensed-800.ttf
+          weight: 800
+    - family: Gelasio
+      fonts:
+        - asset: assets/fonts/Gelasio-400.ttf
+          weight: 400
+        - asset: assets/fonts/Gelasio-700.ttf
+          weight: 700
+        - asset: assets/fonts/Gelasio-400Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/Gelasio-700Italic.ttf
+          weight: 700
+          style: italic
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-400.ttf
+          weight: 400
+        - asset: assets/fonts/Poppins-600.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-700.ttf
+          weight: 700
